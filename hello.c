@@ -3,6 +3,8 @@
 //---------------------------------------------------------
 #include "hellocfg.h"			//BIOS include file
 #include "framework.h"
+#include "linear_filter_api.h"
+#include "data.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -15,10 +17,17 @@ static uint8_t dip7 = 0;
 static uint8_t dip8 = 0;
 static int ledMode = 0;
 
+p_linear_filter lp_filter;
+p_linear_filter bp_filter;
+p_linear_filter hp_filter;
+
 //---------------------------------------------------------
 //---------------------------------------------------------
 void main(void)
 {
+	lp_filter = filter_init(a_lp, N_LP_A, b_lp, N_LP_B);
+	bp_filter = filter_init(a_bp, N_BP_A, b_bp, N_BP_B);
+	hp_filter = filter_init(a_hp, N_HP_A, b_hp, N_HP_B);
 	initAll();
 	return;  		// return to BIOS scheduler
 }
@@ -72,6 +81,7 @@ void led20Hz(void){
 void audioHWI(void)
 {
 	int16_t s16;
+	int16_t f1, f2, f3;
 	int16_t mask = 0x0000;
 
 
@@ -90,17 +100,19 @@ void audioHWI(void)
 				index++;
 				index = index % 32000;
 
-				if (dip6){
-					// LED 2 AT 6HZ
-				}
-
-				if (dip7){
-					// LED 2 AT 6HZ
-				}
-
+//				if (dip6){
+//					f1 = filter_filter(lp_filter, (float *) &s16);
+//				}
+//
+//				if (dip7){
+//					s16 = (int16_t) filter_filter(bp_filter, (float *) &s16);
+//				}
+//
 				if (dip8){
-					// LED 2 AT 6HZ
+					s16 = filter_filter(hp_filter, &s16);
 				}
+//
+//				s16 = f1 + f2 + f3;
 
 			} else {
 
