@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 static int index = 0;
-static int16_t buffer[32000];
+static float buffer[32000];
 static uint8_t dip1 = 0;
 static uint8_t dip2 = 0;
 static uint8_t dip6 = 0;
@@ -32,7 +32,7 @@ void main(void)
 	return;  		// return to BIOS scheduler
 }
 
-int addToBuffer(int16_t s16, int i){
+int addToBuffer(float s16, int i){
 
 	buffer[i] = s16;
 
@@ -41,9 +41,9 @@ int addToBuffer(int16_t s16, int i){
 	return i;
 }
 
-int16_t readFromBuffer(int i){
+float readFromBuffer(int i){
 
-	int16_t s16 = buffer[i];
+	float s16 = buffer[i];
 	return s16;
 }
 
@@ -80,12 +80,12 @@ void led20Hz(void){
 //---------------------------------------------------------
 void audioHWI(void)
 {
-	int16_t s16;
-	int16_t f1, f2, f3;
+	float s16;
+	float f1, f2, f3;
 	int16_t mask = 0x0000;
 
 
-	s16 = read_audio_sample();
+	s16 = (float) read_audio_sample();
 
 	if (MCASP->RSLOT)
 	{
@@ -100,19 +100,19 @@ void audioHWI(void)
 				index++;
 				index = index % 32000;
 
-//				if (dip6){
-//					f1 = filter_filter(lp_filter, (float *) &s16);
-//				}
-//
-//				if (dip7){
-//					s16 = (int16_t) filter_filter(bp_filter, (float *) &s16);
-//				}
-//
-				if (dip8){
-					s16 = filter_filter(hp_filter, &s16);
+				if (dip6){
+					f1 = filter_filter(lp_filter, &s16);
 				}
-//
-//				s16 = f1 + f2 + f3;
+
+				if (dip7){
+					f2 = filter_filter(bp_filter, &s16);
+				}
+
+				if (dip8){
+					f3 = filter_filter(hp_filter, &s16);
+				}
+
+				s16 = f1 + f2 + f3;
 
 			} else {
 
@@ -126,14 +126,14 @@ void audioHWI(void)
 
 			// BOTH LEDS OFF
 			ledMode = 0;
-			s16 &= mask;
+			s16 = 0.0;
 		}
 
 
 
 	} else {
-		s16 &= mask;
+		s16 = 0.0;
 	}
 
-	write_audio_sample(s16);
+	write_audio_sample((int16_t) s16);
 }
